@@ -19,7 +19,7 @@ conn = boto.ec2.connect_to_region("us-east-1",
 
 
 reservations = conn.run_instances(
-        'ami-e84d8480',
+        'ami-884bf7e0',
         key_name='evospace',
         instance_type='m3.medium',
         security_groups=['launch-wizard-1'])
@@ -44,7 +44,7 @@ time.sleep(40)
 
 
 def execute_task():
-    sudo('uname -a')
+    sudo('python evospace/cherry_server.py')
 
 env.hosts = [reservations.instances[0].public_dns_name]
 env.user = 'ubuntu'
