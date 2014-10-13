@@ -1,0 +1,31 @@
+#Rename to conf.yaml
+
+NUMBER_OF_WORKERS: 8
+SAMPLE_SIZE: 100
+POPULATION_SIZE: 640
+
+#SERVER: http://polar-chamber-2356.herokuapp.com/evospace
+SERVER: http://127.0.0.1:5000/evospace
+
+WORKER_TYPE: c1
+
+CHROMOSOME_LENGTH: 128
+PEAKS: 512
+
+
+WORKER_GENERATIONS: 50
+MAX_SAMPLES: 20
+
+#ESTE para PPEAKS
+#MUTATION_FLIP_PB: .02
+
+#ESTE PARA Griewank (10, '36', '23.67', 0.01, '23.67', ['23.67', '0.56', '0.01', '9', '10\n'])
+#config["MUTPB"], config["CXPB"], config["SAMPLE_SIZE"],config["WORKER_GENERATIONS"]
+
+MUTATION_FLIP_PB: .05
+
+TOURNAMENT_SIZE: 4
+CXPB: 0.5
+MUTPB: .2
+
+RETURN_RATE: 1.00
