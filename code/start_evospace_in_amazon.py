@@ -19,7 +19,7 @@ conn = boto.ec2.connect_to_region("us-east-1",
 
 
 reservations = conn.run_instances(
-        'ami-28843d40',min_count=2, max_count=2,
+        'ami-1c7bc274',min_count=2, max_count=2,
         key_name='evospace',
         instance_type='m3.medium',
         security_groups=['launch-wizard-1'])

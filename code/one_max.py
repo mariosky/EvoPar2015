@@ -1,12 +1,12 @@
 __author__ = 'mariosky'
 
 
-
-BROKER_URL = 'redis://localhost:6379/0'
+EC2_INSTANCE = 'ec2-54-172-50-103.compute-1.amazonaws.com'
+BROKER_URL = 'redis://%s:6379/0' % EC2_INSTANCE
 
 from celery import Celery
 
-app = Celery('one_max', broker=BROKER_URL, backend='redis://localhost')
+app = Celery('one_max', broker=BROKER_URL, backend=BROKER_URL)
 app.conf.CELERY_TASK_SERIALIZER = 'json'
 
 
