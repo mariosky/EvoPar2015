@@ -1,7 +1,9 @@
 __author__ = 'mariosky'
 
-# http://aws.amazon.com/sdk-for-python/
-# Jugando con la libreria de amazon para la gestion de maquinas virtuales EC2
+from fabric.api import *
+import boto.ec2
+import aws_keys
+
 
 import boto.ec2
 import aws_keys
@@ -20,13 +22,16 @@ conn = boto.ec2.connect_to_region("us-east-1",
 
 
 reservations = conn.run_instances(
-        "ami-1c7bc274",min_count=2, max_count=2,
+        "ami-84ef55ec",min_count=2, max_count=2,
         key_name='evospace',
         instance_type='m3.medium',
         security_groups=['launch-wizard-1'])
 
 time.sleep(10)
 
+#
+# Wait Method
+#
 for instance in reservations.instances:
     while instance.state != "running":
         time.sleep(5)
@@ -40,25 +45,16 @@ for instance in reservations.instances:
 print "waiting..."
 time.sleep(40)
 
-
 def execute_task():
-    sudo('python evospace/evospace_deamon.py')
-
-print "EvoSpace:"
-print reservations.instances[0].public_dns_name
-print reservations.instances[0].id
-print reservations.instances[0].ip_address
-
-print "Redis:"
-print reservations.instances[1].public_dns_name
-print reservations.instances[1].id
-print reservations.instances[1].ip_address
+    put(local_path='one_max.py', remote_path="EvoPar2015/code/one_max.py" )
+    with cd("EvoPar2015/code"):
+        sudo("celery -A one_max worker --detach --loglevel=info")
 
 
-env.hosts = [reservations.instances[0].public_dns_name]
+env.hosts = [instance.public_dns_name for instance in reservations.instances]
 env.user = 'ubuntu'
 env.key_filename = 'evospace.pem'
 
 execute(execute_task)
-#conn.terminate_instances(instance_ids=[reservations.instances[0].id])
 
+#celery -A one_max worker --detach --loglevel=info

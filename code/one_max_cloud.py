@@ -15,7 +15,7 @@ conf_out = open("conf/one_max-"+experiment_id+".yaml","w")
 yaml.dump(config, conf_out)
 conf_out.close()
 
-for i in range(20):
+for i in range(2):
     start = time.time()
 
     init_job = initialize.delay(config=config)
