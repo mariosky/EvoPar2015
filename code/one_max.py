@@ -1,7 +1,7 @@
 __author__ = 'mariosky'
 
 
-EC2_INSTANCE = 'ec2-54-173-0-83.compute-1.amazonaws.com'
+EC2_INSTANCE = 'ec2-54-173-15-97.compute-1.amazonaws.com'
 BROKER_URL = 'redis://%s:6379/0' % EC2_INSTANCE
 
 from celery import Celery

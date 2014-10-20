@@ -22,7 +22,7 @@ conn = boto.ec2.connect_to_region("us-east-1",
 
 
 reservations = conn.run_instances(
-        "ami-84ef55ec",min_count=2, max_count=2,
+        "ami-40149128",min_count=2, max_count=2,
         key_name='evospace',
         instance_type='m3.medium',
         security_groups=['launch-wizard-1'])
@@ -47,8 +47,9 @@ time.sleep(40)
 
 def execute_task():
     put(local_path='one_max.py', remote_path="EvoPar2015/code/one_max.py" )
-    with cd("EvoPar2015/code"):
-        sudo("celery -A one_max worker --detach --loglevel=info")
+    put(local_path='celeryd', remote_path="/etc/default/celeryd",  use_sudo=True, mode=0640)
+    sudo("chown root /etc/default/celeryd")
+    sudo("service celeryd start")
 
 
 env.hosts = [instance.public_dns_name for instance in reservations.instances]
@@ -57,4 +58,4 @@ env.key_filename = 'evospace.pem'
 
 execute(execute_task)
 
-#celery -A one_max worker --detach --loglevel=info
+#celeryd -A one_max worker --detach --loglevel=info

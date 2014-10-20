@@ -5,6 +5,7 @@ from one_max import initialize, work
 import time, yaml
 
 
+
 config = yaml.load(open("conf/conf.yaml"))
 
 experiment = "w%d-%d-p%d" % (config["NUMBER_OF_WORKERS"], config["RETURN_RATE"]*100,config["POPULATION_SIZE"])
@@ -36,6 +37,9 @@ for i in range(2):
         print "Working"
         for job in jids:
             if job.ready():
+                if job.status == 'FAILURE':
+                    print job.traceback
+                time.sleep(2)
                 r = job.get()
                 print r
                 results_list.append(r)
