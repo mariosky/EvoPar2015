@@ -1,48 +1,41 @@
 __author__ = 'mariosky'
 
-
-EC2_INSTANCE = 'ec2-54-172-224-4.compute-1.amazonaws.com'
-BROKER_URL = 'redis://%s:6379/0' % EC2_INSTANCE
-
-from celery import Celery
-
-app = Celery('one_max', broker=BROKER_URL, backend=BROKER_URL)
-app.conf.CELERY_TASK_SERIALIZER = 'json'
-
-
-
-import random
-import time
-
-
+import random, time
 
 from deap import base
 from deap import creator
 from deap import tools
 
 import jsonrpclib
+import peaks
 
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
 
-def evalOneMax(individual):
-    return sum(individual),
+
+PEAKS = None #GLOBAL Set in work()
+
+def evalPeaks(individual):
+    global PEAKS
+    return peaks.p_peaks(individual, PEAKS),
 
 
 def getToolBox(config):
     toolbox = base.Toolbox()
+    # Attribute generator
     toolbox.register("attr_bool", random.randint, 0, 1)
-    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, config["CHROMOSOME_LENGTH"])
+    # Structure initializers
+    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool,config["CHROMOSOME_LENGTH"])
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-    toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-    toolbox.register("mate", tools.cxTwoPoint)
-    toolbox.register("select", tools.selTournament, tournsize=3)
-    toolbox.register("evaluate", evalOneMax)
+    # Operator registering
+    toolbox.register("evaluate", evalPeaks)
+    toolbox.register("mate", tools.cxTwoPoints)
+    toolbox.register("mutate", tools.mutFlipBit, indpb = config["MUTATION_FLIP_PB"])
+    toolbox.register("select", tools.selTournament, tournsize=config["TOURNAMENT_SIZE"])
     return toolbox
 
-@app.task
+
 def initialize(config):
     pop = getToolBox(config).population(n=config["POPULATION_SIZE"])
     server = jsonrpclib.Server(config["SERVER"])
@@ -50,7 +43,6 @@ def initialize(config):
 
     sample = [{"chromosome":ind[:], "id":None, "fitness":{"DefaultContext":0.0}} for ind in pop]
     init_pop = {'sample_id': 'None' , 'sample':   sample}
-
     server.putSample(init_pop)
 
 
@@ -92,11 +84,14 @@ def evolve(sample_num, config):
     fitnesses = map(toolbox.evaluate, pop)
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit
+
     sample_id = evospace_sample['sample_id']
+
 
     total_evals = len(pop)
     best_first   = None
     best_individual = None
+    diversity = []
     # Begin the evolution
 
     for g in range(config["WORKER_GENERATIONS"]):
@@ -147,8 +142,8 @@ def evolve(sample_num, config):
             best_first = best
 
         best_individual = tools.selBest(pop, 1)[0]
-        if best ==  config["CHROMOSOME_LENGTH"]:
-            #print best_individual
+        if best >= 1.0:
+            print best_individual
             break
 
 
@@ -165,22 +160,32 @@ def evolve(sample_num, config):
 
     startPutback =  time.time()
     if random.random() < config["RETURN_RATE"]:
-        put_sample(config, evospace_sample)
+        try:
+            put_sample(config, evospace_sample)
+        except:
+            return 0.0, \
+           [config["CHROMOSOME_LENGTH"],best, sample_num, round(time.time() - start, 2),
+            round(tGetSample,2) , round( tEvol,2), 0, total_evals, best_first,"EXCEPTION_PUT",
+            config["MUTPB"], config["CXPB"], config["SAMPLE_SIZE"],config["WORKER_GENERATIONS"],sample_id]
+
+
         was_returned= "RETURNED"
     else:
          was_returned= "LOST"
     tPutBack = time.time() - startPutback
 
-    return best ==  config["CHROMOSOME_LENGTH"], \
+    return best >= 1.0, \
            [config["CHROMOSOME_LENGTH"],best, sample_num, round(time.time() - start, 2),
             round(tGetSample,2) , round( tEvol,2), round(tPutBack, 2), total_evals, best_first,was_returned,
-             config["MUTPB"], config["CXPB"], config["SAMPLE_SIZE"],config["WORKER_GENERATIONS"],sample_id]
+            config["MUTPB"], config["CXPB"], config["SAMPLE_SIZE"],config["WORKER_GENERATIONS"],sample_id]
 
-@app.task
+
 def work(params):
     worker_id = params[0]
     config = params[1]
     results = []
+    global PEAKS
+    PEAKS = peaks.get_peaks(config["PEAKS"],config["CHROMOSOME_LENGTH"],64)
     for sample_num in range(config["MAX_SAMPLES"]):
         server = jsonrpclib.Server(config["SERVER"]) #Create every time to prevent timeouts
         if int(server.found(None)):
@@ -189,11 +194,5 @@ def work(params):
             gen_data = evolve(sample_num, config)
             if gen_data[0]:
                 server.found_it(None)
-                print "FOUND"
             results.append([worker_id] + gen_data[1])
-            #print [worker_id] + gen_data[1]
     return results
-
-
-if __name__ == '__main__':
-    pass

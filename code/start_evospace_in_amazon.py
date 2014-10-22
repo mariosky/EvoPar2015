@@ -49,7 +49,7 @@ print reservations.instances[0].public_dns_name
 print reservations.instances[0].id
 print reservations.instances[0].ip_address
 
-print "Redis:"
+print "CeleryQueue:"
 print reservations.instances[1].public_dns_name
 print reservations.instances[1].id
 print reservations.instances[1].ip_address
