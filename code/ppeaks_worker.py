@@ -7,7 +7,19 @@ from deap import creator
 from deap import tools
 
 import jsonrpclib
-import peaks
+import ppeaks
+
+
+
+EC2_INSTANCE = 'ec2-54-165-207-112.compute-1.amazonaws.com'
+BROKER_URL = 'redis://%s:6379/0' % EC2_INSTANCE
+
+from celery import Celery
+
+app = Celery('one_max', broker=BROKER_URL, backend=BROKER_URL)
+app.conf.CELERY_TASK_SERIALIZER = 'json'
+
+
 
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -18,7 +30,7 @@ PEAKS = None #GLOBAL Set in work()
 
 def evalPeaks(individual):
     global PEAKS
-    return peaks.p_peaks(individual, PEAKS),
+    return ppeaks.p_peaks(individual, PEAKS),
 
 
 def getToolBox(config):
@@ -35,7 +47,7 @@ def getToolBox(config):
     toolbox.register("select", tools.selTournament, tournsize=config["TOURNAMENT_SIZE"])
     return toolbox
 
-
+@app.task
 def initialize(config):
     pop = getToolBox(config).population(n=config["POPULATION_SIZE"])
     server = jsonrpclib.Server(config["SERVER"])
@@ -179,13 +191,13 @@ def evolve(sample_num, config):
             round(tGetSample,2) , round( tEvol,2), round(tPutBack, 2), total_evals, best_first,was_returned,
             config["MUTPB"], config["CXPB"], config["SAMPLE_SIZE"],config["WORKER_GENERATIONS"],sample_id]
 
-
+@app.task
 def work(params):
     worker_id = params[0]
     config = params[1]
     results = []
     global PEAKS
-    PEAKS = peaks.get_peaks(config["PEAKS"],config["CHROMOSOME_LENGTH"],64)
+    PEAKS = ppeaks.get_peaks(config["PEAKS"],config["CHROMOSOME_LENGTH"],64)
     for sample_num in range(config["MAX_SAMPLES"]):
         server = jsonrpclib.Server(config["SERVER"]) #Create every time to prevent timeouts
         if int(server.found(None)):

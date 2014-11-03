@@ -11,7 +11,7 @@ CELERY_BIN="/usr/local/bin/celery"
 
 # App instance to use
 # comment out this line if you don't use an app
-CELERY_APP="one_max"
+CELERY_APP="ppeaks_worker"
 # or fully qualified:
 #CELERY_APP="proj.tasks:app"
 

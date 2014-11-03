@@ -14,7 +14,7 @@
 
 import random
 import time
-import peaks
+import ppeaks
 import diversity
 
 from deap import base
@@ -27,9 +27,9 @@ datafile = open(experiment_id+".dat","a")
 
 
 def evalPeaks(individual):
-    return peaks.p_peaks(individual, pks),
+    return ppeaks.p_peaks(individual, pks),
 
-pks = peaks.get_peaks(number=512,bits=256,seed=64)
+pks = ppeaks.get_peaks(number=512,bits=256,seed=64)
 
 
 
@@ -125,12 +125,21 @@ def main(i):
             datafile.write( "%d,%d,%d,%d" % (i,g, time.time()-start, evaluated))
             break
 
+    import numpy as np
+    import matplotlib.pyplot as plt
 
-    print diversity_by_gen
-    
+    div_  = np.array(diversity_by_gen)
 
+    fig, (ax0, ax1) = plt.subplots(nrows=2)
+
+
+
+    ax0.plot( range(len(diversity_by_gen)) ,div_[:,0] , 'b-', linewidth=2)
+    ax1.plot( range(len(diversity_by_gen)) ,div_[:,1] , 'r-', linewidth=2)
+
+    plt.show()
 
 
 if __name__ == "__main__":
-    for i in range(2):
+    for i in range(1):
         main(i)

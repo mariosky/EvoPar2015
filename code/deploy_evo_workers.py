@@ -22,7 +22,7 @@ conn = boto.ec2.connect_to_region("us-east-1",
 
 
 reservations = conn.run_instances(
-        "ami-40149128",min_count=2, max_count=2,
+        "ami-40149128",min_count=4, max_count=4,
         key_name='evospace',
         instance_type='m3.medium',
         security_groups=['launch-wizard-1'])
@@ -46,7 +46,8 @@ print "waiting..."
 time.sleep(40)
 
 def execute_task():
-    put(local_path='one_max.py', remote_path="EvoPar2015/code/one_max.py" )
+    put(local_path='ppeaks_worker.py', remote_path="EvoPar2015/code/ppeaks_worker.py" )
+    put(local_path='ppeaks.py', remote_path="EvoPar2015/code/ppeaks.py" )
     put(local_path='celeryd', remote_path="/etc/default/celeryd",  use_sudo=True, mode=0640)
     sudo("chown root /etc/default/celeryd")
     sudo("service celeryd start")
